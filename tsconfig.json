@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext", "DOM"],
+    "skipLibCheck": true,
+    // "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["vite-plugin-svg-icons/client","node"]
+  },
+  "include": ["./src/*.ts","./src/*.vue","./auto-imports.d.ts"],
+  "exclude": ["dist","node_modules"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

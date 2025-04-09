@@ -1,0 +1,77 @@
+{
+  "name": "three-core",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "three-core",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.umd.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.cjs"
+    },
+    "./*": "./dist/*"
+  },
+  "files": [
+    "dist/index*"
+  ],
+  "keywords": [
+    "three-core"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZhangChuan01/three-core.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vue-tsc --emitDeclarationOnly",
+    "types": "vue-tsc ",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0",
+    "axios": "^1.8.4",
+    "localforage": "^1.10.0",
+    "three": "^0.175.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.12",
+    "@babel/eslint-parser": "^7.19.1",
+    "@types/node": "^20.4.5",
+    "@types/stylelint": "^14",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "@vitejs/plugin-legacy": "^4.0.1",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "autoprefixer": "^10.4.13",
+    "element-plus": "^2.9.3",
+    "eslint": "^8.33.0",
+    "eslint-plugin-vue": "^9.9.0",
+    "postcss": "^8.4.21",
+    "postcss-html": "^1.5.0",
+    "postcss-scss": "^4.0.6",
+    "reset-css": "^5.0.1",
+    "sass": "^1.84.0",
+    "sass-loader": "^16.0.4",
+    "stylelint": "^14.16.1",
+    "stylelint-config-rational-order": "^0.1.2",
+    "stylelint-config-standard": "^29.0.0",
+    "stylelint-config-standard-scss": "^6.1.0",
+    "stylelint-order": "^6.0.1",
+    "stylelint-scss": "^4.3.0",
+    "typescript": "^4.6.4",
+    "unplugin-auto-import": "^0.18.2",
+    "unplugin-element-plus": "^0.9.1",
+    "vite": "^4.4.7",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-html": "^3.2.0",
+    "vite-plugin-svg-icons": "^2.0.1",
+    "vite-plugin-vue-setup-extend": "^0.4.0",
+    "vue": "^3.2.37",
+    "vue-tsc": "^0.39.5"
+  },
+  "author": "zc"
+}
