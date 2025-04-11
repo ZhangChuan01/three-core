@@ -97,24 +97,23 @@ class ThreeCore {
   /**
  * @description 初始化
  * @param {Params} scene - 初始化参数对象
- * @param {string} scene.container - css选择器或者HTML元素
+ * @param {string | HTMLElement} scene.container - css选择器或者HTML元素
  * @param {number} scene.width - 渲染器的宽度，不传则默认为元素自身宽度
  * @param {number} scene.height - 渲染器的高度，不传则默认为元素自身高度
  * @param {boolean} scene.gizmosVisible - 是否显示 Gizmo，默认为 true
  * @param {number} scene.fov - 摄像机视锥体垂直视野角度，默认80
  * @param {number} scene.near - 摄像机的近裁剪面，默认0.1
  * @param {number} scene.far - 摄像机的远裁剪面，默认1000
- * @param {number} scene.x - 摄像机的 Y 坐标，默认0
+ * @param {number} scene.x - 摄像机的 X 坐标，默认0
  * @param {number} scene.y - 摄像机的 Y 坐标，默认0
  * @param {number} scene.z - 摄像机的 Z 坐标，默认400,当模型单位为mm时，将此参数调至个位数
- * @param {string} scene.backgroundColor - 场景背景色，默认为'#000
+ * @param {string} scene.backgroundColor - 场景背景色，默认为'#000'
  * @param {string} scene.backgroundImage - 场景背景图片，要把图片放到public文件夹目录下，路径为./xxxxx
  * @param {string} scene.skyBox - 天空盒背景图，要把图片放到public文件夹目录下，路径为./xxxxx
  * @param {boolean} scene.adaptive - 是否自适应，默认为true
  * @param {boolean} scene.needComposer - 是否需要后期处理，默认为false
  * @param {number} scene.lightIntensity - 灯光强度，默认为1
  * @param {string} scene.lightColor - 灯光颜色 默认为#ffffff
- * @param {string} scene.skyBox - 天空盒背景图，要把图片放到public文件夹目录下，路径为./xxxxx
  * @param {boolean} scene.needControl - 是否需要控制器 默认为true
  * @param {boolean} scene.enableRotate - 是否允许旋转 默认为true
  * @param {boolean} scene.enableZoom - 是否允许缩放 默认为true
