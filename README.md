@@ -1,6 +1,6 @@
 ThreeCore
 ================
-### 对threejs进行二次封装（尚处于初版，功能还在持续开发中）
+### 对threejs进行二次封装
 #### 如何使用
 ##### 1. 安装
     yarn add three-core --save
@@ -29,6 +29,7 @@ threeCore = new ThreeCore({
 | addMesh   | 向场景中添加模型    |
 | getMesh   | 获取模型    |
 | moveMesh   | 移动模型至指定位置    |
+| translateMesh   | 偏移模型    |
 | moveMeshAnimate   | 通过动画移动模型至指定位置    |
 | stopAnimate   | 停止单个动画或所有动画    |
 | removeMesh   | 移除模型    |
@@ -46,3 +47,8 @@ threeCore = new ThreeCore({
 | hideProfile   | 隐藏模型切面    |
 | testLoadPointCloud   | 测试加载点云数量，主要用于性能测试    |
 | addPoints   | 加载点云,点云颜色支持纯色，渐变色，区域色三种模式    |
+| setModelType   | 设置模型显示类型,支持点,线,体三种模式    |
+| addModelTexture   | 设置模型贴图    |
+| getClickedModel   | 获取鼠标点击的模型    |
+| showInfo   | 目标模型显示一个2D信息,支持html字符串    |
+| hideInfo   | 目标模型隐藏2D信息    |

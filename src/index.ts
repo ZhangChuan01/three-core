@@ -6,13 +6,15 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass'
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils'
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import * as TWEEN from '@tweenjs/tween.js'
 import axios from 'axios'
 import localforage from 'localforage'
 interface Params {
-  container: keyof HTMLElementTagNameMap | HTMLElement
+  container: string | HTMLElement
   width?: number
   height?: number
   x?: number
@@ -29,6 +31,13 @@ interface Params {
   lightIntensity?: number
   lightColor?: string
   skyBox?: string
+  needControl?: boolean
+  enableRotate?: boolean
+  enableZoom?: boolean
+  enablePan?: boolean
+  enableRotateX?: boolean
+  enableRotateY?: boolean
+  enableRotateZ?: boolean
 }
 interface AreaColor {
   colorList: {
@@ -51,6 +60,7 @@ class ThreeCore {
   private scene: THREE.Scene
   private camera: THREE.PerspectiveCamera
   private renderer: THREE.WebGLRenderer
+  private labelRenderer: CSS2DRenderer
   private controls: ArcballControls
   private container: HTMLElement
   private width: number
@@ -78,6 +88,12 @@ class ThreeCore {
   private modelMaps: { [key: string]: THREE.Mesh }
   private meshAnimates: { name: string, tween: TWEEN.Tween<THREE.Vector3> }[]
   private staticMapping: { [key: string]: any }
+  private needControl: boolean | undefined
+  private enableRotate: boolean | undefined
+  private enableZoom: boolean | undefined
+  private enablePan: boolean | undefined
+  private enableRotateX?: boolean
+  private enableRotateY?: boolean
   /**
  * @description 初始化
  * @param {Params} scene - 初始化参数对象
@@ -98,11 +114,17 @@ class ThreeCore {
  * @param {boolean} scene.needComposer - 是否需要后期处理，默认为false
  * @param {number} scene.lightIntensity - 灯光强度，默认为1
  * @param {string} scene.lightColor - 灯光颜色 默认为#ffffff
- * 
+ * @param {string} scene.skyBox - 天空盒背景图，要把图片放到public文件夹目录下，路径为./xxxxx
+ * @param {boolean} scene.needControl - 是否需要控制器 默认为true
+ * @param {boolean} scene.enableRotate - 是否允许旋转 默认为true
+ * @param {boolean} scene.enableZoom - 是否允许缩放 默认为true
+ * @param {boolean} scene.enablePan - 是否允许平移 默认为true
+ * @param {boolean} scene.enableRotateX - 是否允许X轴旋转 默认为true
+ * @param {boolean} scene.enableRotateY - 是否允许Y轴旋转 默认为true
  */
   constructor(scene: Params) {
     if (!scene.container) {
-      console.error('container,width,height为必填字段')
+      console.error('container为必填字段')
       return
     }
     this.initParams = scene
@@ -136,14 +158,18 @@ class ThreeCore {
     this.skyBox = scene.skyBox ?? ''
     this.adaptive = scene.adaptive ?? true
     this.needComposer = scene.needComposer ?? false
+    this.needControl = scene.needControl ?? true
+    this.enableRotate = scene.enableRotate ?? true
+    this.enableZoom = scene.enableZoom ?? true
+    this.enablePan = scene.enablePan ?? true
+    this.enableRotateX = scene.enableRotateX ?? true
+    this.enableRotateY = scene.enableRotateY ?? true
     this.staticMapping = {
       panelDirection: {
         horizontal: 0.5 * Math.PI,
         vertical: 1 * Math.PI
       }
     }
-
-    // this.models = []
     this.modelMaps = {}
     this.material = new THREE.LineBasicMaterial({
       color: 0x00ffff
@@ -174,7 +200,7 @@ class ThreeCore {
     this.addPoint()
     this.addCamera()
     this.addRenderer()
-    this.addControl()
+    if(this.needControl) this.addControl()
     if(this.backgroundImage) this.addBg()
     if(this.skyBox) this.addSkyBox()
   }
@@ -249,7 +275,14 @@ class ThreeCore {
       alpha: true
     })
     this.renderer.setSize(this.width, this.height)
+    this.labelRenderer = new CSS2DRenderer()
+    this.labelRenderer.setSize(this.width, this.height)
+    // // //设置.pointerEvents=none，以免模型标签HTML元素遮挡鼠标选择场景模型
+    this.labelRenderer.domElement.style.position = 'absolute'
+    //标签向右、向下偏移，以免遮挡选中的气泡
+    this.labelRenderer.domElement.style.top = '0px'
     this.container.appendChild(this.renderer.domElement)
+    this.container.appendChild(this.labelRenderer.domElement)
     if(this.needComposer) this.initComposer()
   }
   private initComposer() {
@@ -285,8 +318,19 @@ class ThreeCore {
   }
   private addControl() {
     // 控制器
-    this.controls = new ArcballControls(this.camera as THREE.Camera, this.renderer?.domElement as HTMLElement, this.scene)
+    this.controls = new ArcballControls(this.camera as THREE.Camera, this.labelRenderer?.domElement as HTMLElement, this.scene)
     this.controls.setGizmosVisible(this.gizmosVisible)
+    this.controls.enableRotate = this.enableRotate
+    this.controls.enableZoom = this.enableZoom
+    this.controls.enablePan = this.enablePan
+    if (this.enableRotateX === false) {
+      this.controls.minPolarAngle = Math.PI / 2  // 最小极角为90度（禁止向下看）
+      this.controls.maxPolarAngle = Math.PI / 2  // 最大极角为90度（禁止向上看）
+    }
+    if (this.enableRotateY === false) {
+      this.controls.minAzimuthAngle = 0   // 最小方位角（azimuth）为-180度
+      this.controls.maxAzimuthAngle = 0    // 最大方位角（azimuth）为180度
+    }
     this.controls.addEventListener('change', () => {
       // const target = new THREE.Vector3()
       // this.camera.getWorldDirection(target)
@@ -314,6 +358,7 @@ class ThreeCore {
         this.composer.render()
       } else {
         this.scene.updateMatrixWorld(true)
+        this.labelRenderer.render(this.scene, this.camera)
         this.renderer.render(this.scene, this.camera)
       }
     }, 300)
@@ -403,7 +448,7 @@ class ThreeCore {
    * @param {boolean} needDelete 是否需要删除
    */
   getMesh(mesh: string | THREE.Mesh, needDelete?: boolean): THREE.Object3D | undefined {
-    console.log('getMesh', mesh)
+    // console.log('getMesh', mesh)
     let key = 'name'
     if (typeof mesh === 'string'){
       if (this.modelMaps[mesh]) {
@@ -415,8 +460,10 @@ class ThreeCore {
     }else{
       key = 'uuid'
     }
+    console.log('models', key)
     function findModel(models: THREE.Object3D[]): THREE.Object3D | undefined {
       for (const item of models) {
+        // console.log('item', item,models)
         if (item[key] === (key === 'name' ? mesh : mesh.uuid)) {
           if (needDelete) {
             item.parent.remove(mesh)
@@ -450,6 +497,23 @@ class ThreeCore {
     // console.log('mesh', name, x, y, z, mesh)
     if (mesh) {
       mesh.position.set(x ?? mesh.position.x, y ?? mesh.position.y, z ?? mesh.position.z)
+    }
+  }
+  /**
+   * @description 偏移模型
+   * @param {Params} object
+   * @param {string} object.name - 要偏移的模型或模型名称
+   * @param {number} object.x - 模型x坐标偏移量
+   * @param {number} object.y - 模型y坐标偏移量
+   * @param {number} object.z - 模型z坐标偏移量
+   */
+  translateMesh({ name, x, y, z }: { name: string | THREE.Mesh, x?: number, y?: number, z?: number }) {
+    const mesh = this.getMesh(name)
+    if (mesh) {
+      if (x) mesh.translateX(x)
+      if (y) mesh.translateY(y)
+      if (z) mesh.translateZ(z)
+      this.render()
     }
   }
   /**
@@ -520,9 +584,9 @@ class ThreeCore {
    * @param {string | THREE.Mesh} removedMesh 要删除的模型名称,传入模型名称或者模型本身
    */
   removeMesh(removedMesh: string | THREE.Mesh) {
-    console.log('removeMesh', removedMesh)
+    // console.log('removeMesh', removedMesh)
     const mesh = this.getMesh(removedMesh, true) as THREE.Mesh
-    console.log('rrrrrrrrrrrr', mesh)
+    console.log('rrrrrrrrrrrr',this.scene, mesh)
     if (mesh) {
       this.gemometryDispose(mesh)
       // this.scene.remove(mesh)
@@ -597,31 +661,34 @@ class ThreeCore {
       this.render()
     }
   }
-  private async getModelUrl(url: string): Promise<string> {
+  private async getModelUrl(url: string, callback?: (string) => void): Promise<{ url: string, isloading?: boolean }> {
     const name = url.substring(url.lastIndexOf('/') + 1)
     const model = await localforage.getItem(name)
     return new Promise(resolve => {
       if (model && model instanceof Blob) {
         const URL = window.URL || window.webkitURL
-        resolve(URL.createObjectURL(model))
+        resolve({ url: URL.createObjectURL(model) })
       } else {
+        console.log('axios')
         axios({
           url,
           method: 'get',
-          responseType: 'blob'
-          // onDownloadProgress: function (progressEvent) {
-          //   // 对原生进度事件的处理
-          //   const num = (progressEvent.loaded / progressEvent.total! * 100).toFixed(1)
-          //   console.log('已加载' + num + '%')
-          // }
+          responseType: 'blob',
+          onDownloadProgress: function (progressEvent) {
+            console.log(2222, progressEvent)
+            // 对原生进度事件的处理
+            const num = (progressEvent.loaded / progressEvent.total! * 100).toFixed(1)
+            console.log('已加载' + num + '%')
+            if (callback) callback(num)
+          }
         }).then(res => {
           localforage.setItem(name, res.data).then(() => {
             const URL = window.URL || window.webkitURL
-            resolve(URL.createObjectURL(res.data))
+            resolve({ url: URL.createObjectURL(res.data), isloading: true })
           })
         }).catch(err => {
           console.error('请求出错', err)
-          resolve('')
+          resolve({ url: '' })
         })
       }
     })
@@ -635,13 +702,15 @@ class ThreeCore {
    * @param {boolean} object.needCache 是否需要缓存
    * @param {boolean} object.outline 是否需要边框
    * @param {string} object.name 重命名模型
+   * @param {Function} callback 可以传递一个回调函数,对加载进度进行显示或处理
    * @returns 
    */
   async loadFbx({ url = '', needCenter, addToScene = true, needCache = false, outline = false,name }: 
-    { url: string, needCenter?: boolean, addToScene?: boolean, needCache?: boolean, outline?: boolean,name?: string }): Promise<THREE.Object3D> {
-    let modelUrl = url
+    { url: string, needCenter?: boolean, addToScene?: boolean, needCache?: boolean, outline?: boolean, name?: string }, callback?: (string) => void): Promise<THREE.Object3D> {
+    let modelUrl = url, model: any = {}
     if (needCache) {
-      modelUrl = await this.getModelUrl(url)
+      model = await this.getModelUrl(url, callback)
+      modelUrl = model.url
     }
     // console.log('modelUrl', modelUrl)
     return new Promise((resolve, reject) => {
@@ -672,8 +741,12 @@ class ThreeCore {
             this.render()
           }
           resolve(object)
-        }, () => {
-          // console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+        }, (xhr: any) => {
+          const num = (xhr.loaded / xhr.total * 100).toFixed(1)
+          console.log(num + '% loaded')
+          if ((!needCache || !model.isloading) && callback) {
+            callback(num)
+          }
         }, err => {
           console.log('err', err)
           reject(new Error('加载出错'))
@@ -690,13 +763,15 @@ class ThreeCore {
    * @param {boolean} object.needCache 是否需要缓存
    * @param {boolean} object.outline 是否需要边框
    * @param {string} object.name 重命名模型
+   * @param {Function} callback 可以传递一个回调函数,对加载进度进行显示或处理
    * @returns 
    */
   async loadObj({ url = '', addToScene = true, needCache = false, needCenter, outline = false, name }: 
-    { url: string, addToScene?: boolean, needCache?: boolean, needCenter?: boolean, outline?: boolean,name?: string }): Promise<THREE.Object3D> {
-    let modelUrl = url
+    { url: string, addToScene?: boolean, needCache?: boolean, needCenter?: boolean, outline?: boolean, name?: string }, callback?: (string) => void): Promise<THREE.Object3D> {
+    let modelUrl = url, model: any = {}
     if (needCache) {
-      modelUrl = await this.getModelUrl(url)
+      model = await this.getModelUrl(url, callback)
+      modelUrl = model.url
     }
     return new Promise((resolve, reject) => {
       if (!modelUrl) {
@@ -722,9 +797,81 @@ class ThreeCore {
             this.render()
           }
           resolve(object)
+        }, (xhr: any) => {
+          const num = (xhr.loaded / xhr.total * 100).toFixed(1)
+          console.log(num + '% loaded')
+          if ((!needCache || !model.isloading) && callback) {
+            callback(num)
+          }
         })
       }
     })
+  }
+  private cloneGeometry(model: THREE.Object3D, color?: string) {
+    const geometry = model.geometry.clone()
+    const matrix = new THREE.Matrix4().makeTranslation(
+      model.position.x,
+      model.position.y,
+      model.position.z
+    )
+    geometry.applyMatrix4(matrix)
+    return geometry
+  }
+  /**
+   * @description 设置模型显示类型
+   * @param {Params} object 
+   * @param {string} object.model 要设置的模型或者模型名称
+   * @param {string} object.type 模型显示类型,支持point和line,不传则为体
+   * @param {string} object.color 模型颜色 
+   * @returns 
+   */
+  setModelType({ model,type,color }:{model: string|THREE.Object3D,type?: string,color?: string}){ 
+    const modelData = typeof model === 'string' ? this.modelMaps[model] : model
+    const geometries: any = []
+    let newMesh:any = null
+    modelData.children.forEach(child => {
+      if(child.isMesh){
+        geometries.push(this.cloneGeometry(child, color))
+      }
+    })
+    // const mergedGeometry = mergeBufferGeometries(geometries)
+    console.log('geometries', geometries)
+    const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
+    if (!mergedGeometry) throw new Error('几何体合并失败')
+    if (type === 'point') {
+      const material = new THREE.PointsMaterial({
+        color: color ?? '#fff'
+      })
+      newMesh = new THREE.Points(mergedGeometry, material)
+    }else if (type === 'line') {
+      const wireframeMaterial = new THREE.LineBasicMaterial({
+        color: color ?? '#fff'
+      })
+      newMesh = new THREE.LineSegments(mergedGeometry, wireframeMaterial)
+    }else{
+      newMesh = new THREE.Mesh(mergedGeometry, new THREE.MeshLambertMaterial({ color: color ?? '#fff' }))
+    }
+    console.log('newMesh', newMesh)
+    this.removeMesh(model)
+    this.scene.add(newMesh)
+    this.render()
+    return newMesh
+  }
+  /**
+   * @description 设置模型贴图
+   * @param model 要设置的模型或者模型名称
+   * @param textureurl 贴图路径
+   */
+  addModelTexture(model: THREE.Object3D | string, textureurl: string) {
+    const textureLoader = new THREE.TextureLoader()
+    const textureNormal = textureLoader.load(textureurl)
+    const modelData = typeof model === 'string' ? this.modelMaps[model] : model
+    modelData.children.forEach(child => {
+      if (child.isMesh) {
+        child.material.map = textureNormal
+      }
+    })
+    this.render()
   }
   /**
    * @description 模型添加发光边框
@@ -1019,6 +1166,59 @@ class ThreeCore {
     this.scene.add(mesh)
     this.render()
     return mesh
+  }
+  /**
+   * @description 获取鼠标点击的模型
+   * @param e 点击位置的鼠标事件
+   * @param model 判断交集的模型
+   * @param includeChildren 是否包含子模型,默认为true
+   * @returns 
+   */
+  getClickedModel(e, model:string|THREE.Object3D,includeChildren: boolean = true) {
+    //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+    const modelData = typeof model === 'string' ? this.modelMaps[model] : model
+    if(!modelData) return
+    console.log('modelData', modelData)
+    const x = ((e.clientX - this.container.getBoundingClientRect().left) / this.width) * 2 - 1
+    const y = - ((e.clientY - this.container.getBoundingClientRect().top) / this.height) * 2 + 1
+    const mouse = new THREE.Vector2()
+    mouse.x = x
+    mouse.y = y
+    console.log('mouse', mouse)
+    // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+    const raycaster = new THREE.Raycaster()
+    console.log('raycaster', raycaster)
+    raycaster.setFromCamera(mouse, this.camera)
+    // 获取raycaster直线和所有模型相交的数组集合
+    // console.log('mesh', this.currentMesh)
+    return raycaster.intersectObjects(modelData.children, includeChildren)
+  }
+  /**
+   * @description 显示2D信息,将信息显示在模型上
+   * @param target 目标模型
+   * @param str 要显示的字符串,支持html字符串
+   */
+  showInfo(target: THREE.Object3D,str:string) {
+    const info = document.createElement('div')
+    info.id = target.object.name
+    info.className = 'label-wrapper'
+    info.style.pointerEvents = 'auto'
+    info.innerHTML = str
+    const moonLabel = new CSS2DObject(info)
+    moonLabel.position.set(target.point.x, target.point.y, target.point.z)
+    moonLabel.visible = true
+    moonLabel.layers.set(100000)
+    target.object.children = [ moonLabel ]
+    console.log(info, moonLabel)
+  }
+  /**
+   * @description 隐藏2D信息
+   * @param target 目标模型
+   */
+  hideInfo(target: THREE.Object3D) {
+    target.object.children = []
+    const label = document.getElementById(target.object.name) as HTMLElement
+    label.parentNode?.removeChild(label)
   }
 }
 

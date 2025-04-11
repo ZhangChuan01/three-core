@@ -1,6 +1,6 @@
 {
   "name": "three-core",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "type": "module",
   "description": "three-core",
   "main": "dist/index.js",

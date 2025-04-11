@@ -81,6 +81,60 @@ const testLoadObj = async () => {
     threeCore.render()
   }, 9000)
 }
+const testLineType = async () => {
+  const motorcycle = await threeCore.loadObj({
+    url: './motorcycle.obj',
+    addToScene: true,
+    needCache: true,
+    needCenter: true
+  })
+  const line = threeCore.setModelType({ model: motorcycle,type: 'line' })
+  setTimeout(() => {
+    threeCore.removeMesh(line)
+    threeCore.render()
+  }, 5000)
+}
+const testPointType = async () => {
+  const motorcycle = await threeCore.loadObj({
+    url: './motorcycle.obj',
+    addToScene: true,
+    needCache: true,
+    needCenter: true
+  })
+  const point = threeCore.setModelType({ model: motorcycle,type: 'point' })
+  console.log('point', point)
+  setTimeout(() => {
+    threeCore.removeMesh(point)
+    threeCore.render()
+  }, 5000)
+}
+const testPlaneType = async () => {
+  const motorcycle = await threeCore.loadObj({
+    url: './motorcycle.obj',
+    addToScene: true,
+    needCache: true,
+    needCenter: true
+  })
+  const plane = threeCore.setModelType({ model: motorcycle })
+  console.log('plane', plane)
+  setTimeout(() => {
+    threeCore.removeMesh(plane)
+    threeCore.render()
+  }, 5000)
+}
+const testModelTextures = async () => {
+  const motorcycle = await threeCore.loadObj({
+    url: './motorcycle.obj',
+    addToScene: true,
+    needCache: true,
+    needCenter: true
+  })
+  threeCore.addModelTexture(motorcycle, './textures.jpeg')
+  setTimeout(() => {
+    threeCore.removeMesh(motorcycle)
+    threeCore.render()
+  }, 5000)
+}
 const generatePoints = () => {
   const points: number[] = []
   for (let i = 0; i < 100000; i++) {
@@ -163,17 +217,33 @@ const testPointClound = (type?: string) => {
     } : '#ED0707'
   })
 }
-const initThree = () => {
+const initThree = async () => {
   threeCore = new ThreeCore({
-    container: document.getElementById('container') as HTMLElement,
+    container: '#container',
     backgroundImage: './three-bg.png',
     // skyBox: './Cold Sunset Equirect.png',
-    lightIntensity: 3,
-    z: 10
+    lightIntensity: 3
+    // z: 10
     // x: 100
     // backgroundColor: 'red'
   })
   threeCore.createScene()
+  // const motorcycle = await threeCore.loadObj({
+  //   url: './motorcycle.obj',
+  //   addToScene: true,
+  //   needCache: true,
+  //   needCenter: true
+  // })
+  // document.getElementById('container')?.addEventListener('click',e => {
+  //   const objects = threeCore.getClickedModel(e,motorcycle)
+  //   console.log('objects', objects)
+  //   if(objects.length){
+  //     threeCore.showInfo(objects[0],'<div style="color:red">测试信息</div>')
+  //     setTimeout(() => {
+  //       threeCore.hideInfo(objects[0])
+  //     },2000)
+  //   }
+  // })
   // threeCore.createPanel({ direction: 'vertical' })
   // threeCore.testLoadPointCloud()
   threeCore.render()
@@ -196,6 +266,15 @@ onMounted(() => {
     <button @click="testLoadObj">
       测试 OBJ及爆炸图
     </button>
+    <button @click="testPointType">
+      测试模型改为点模式
+    </button>
+    <button @click="testLineType">
+      测试模型改为线模式
+    </button>
+    <button @click="testPlaneType">
+      测试模型改为面模式
+    </button>
     <button @click="testPointClound()">
       测试点云普通色
     </button>
@@ -204,6 +283,9 @@ onMounted(() => {
     </button>
     <button @click="testPointClound('linear')">
       测试点云渐变色
+    </button>
+    <button @click="testModelTextures">
+      测试模型贴图
     </button>
   </div>
   <div id="container" />
@@ -217,6 +299,7 @@ onMounted(() => {
   position: absolute;
   top: 10px;
   left: 10px;
+  z-index: 999;
   button {
     margin-right: 15px;
     cursor: pointer;
