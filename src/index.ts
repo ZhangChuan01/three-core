@@ -331,10 +331,15 @@ class ThreeCore {
       this.controls.maxAzimuthAngle = 0    // 最大方位角（azimuth）为180度
     }
     this.controls.addEventListener('change', () => {
-      // const target = new THREE.Vector3()
-      // this.camera.getWorldDirection(target)
-      // target.add(this.camera.position)
-      // console.log('target', target,this.camera.up,this.controls.target)
+      const target = new THREE.Vector3()
+      this.camera.getWorldDirection(target)
+      target.add(this.camera.position)
+      console.log('target', target)
+      console.log('up', this.camera.up)
+      // 获取相机的朝向（目标位置）
+      const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion)
+      const cameraLookAt = target.clone().add(cameraDirection)
+      console.log('cameraLookAt: ', cameraLookAt)
       this.render()
     })
   }
